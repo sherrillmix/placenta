@@ -15,5 +15,19 @@ mobioFs<-otus[,samples[samples$SampleType=='Placenta (FS)'&samples$ExtractionKit
 mobioMs<-otus[,samples[samples$SampleType=='Placenta (MS)'&samples$ExtractionKit=='Mobio Powersoil','SampleID']]
 pspFs<-otus[,samples[samples$SampleType=='Placenta (FS)'&samples$ExtractionKit=='PSP Spin Stool DNA Plus Kit','SampleID']]
 pspMs<-otus[,samples[samples$SampleType=='Placenta (MS)'&samples$ExtractionKit=='PSP Spin Stool DNA Plus Kit','SampleID']]
-inBothFs<-apply(mobioFs,1,function(x)sum(x>0))>3 & apply(pspFs,1,function(x)sum(x>0))>3
-inBothMs<-apply(mobioMs,1,function(x)sum(x>0))>3 & apply(pspMs,1,function(x)sum(x>0))>3
+mobioControl<-otus[,samples[samples$SampleType %in% c('OR Air Swab','Extraction Blank','Sterile Swab')&samples$ExtractionKit=='Mobio Powersoil','SampleID']]
+pspControl<-otus[,samples[samples$SampleType %in% c('OR Air Swab','Extraction Blank','Sterile Swab')&samples$ExtractionKit=='PSP Spin Stool DNA Plus Kit','SampleID']]
+
+controlReadCut<-10
+controlPropCut<-.5
+inControlMobio<-apply(mobioControl,1,function(x)sum(x>controlReadCut))>ncol(mobioControl)*controlPropCut
+inControlPsp<-apply(pspControl,1,function(x)sum(x>controlReadCut))>ncol(pspControl)*controlPropCut
+
+sampleReadCut<-0
+samplePropCut<-.3
+inBothFs<-apply(mobioFs,1,function(x)sum(x>sampleReadCut))>ncol(mobioFs)*samplePropCut & apply(pspFs,1,function(x)sum(x>sampleReadCut))>ncol(pspFs)*samplePropCut & !inControlMobio & !inControlPsp
+print(summary(inBothFs))
+inBothMs<-apply(mobioMs,1,function(x)sum(x>sampleReadCut))>ncol(mobioMs)*samplePropCut & apply(pspMs,1,function(x)sum(x>sampleReadCut))>ncol(pspMs)*samplePropCut & !inControlMobio & !inControlPsp
+print(summary(inBothMs))
+
+
