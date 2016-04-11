@@ -8,9 +8,13 @@ if(!exists('otus')){
   raw<-readLines('data/combined_mapping_qiime_keepers.txt')
   raw[1]<-sub('^#','',raw[1])
   samples<-read.table(textConnection(raw),sep='\t',header=TRUE,stringsAsFactors=FALSE)
-  samples$id<-NA
+  #samples$id<-ave(samples$SampleID,paste(samples$ExtractionKit,samples$SampleType),FUN=function(x)1:length(x))
+  samples$id<-''
   samples[grepl('[567][0-9]',samples$SampleID),'id']<-sub('.*([567][0-9]).*','\\1',samples[grepl('[567][0-9]',samples$SampleID),'SampleID'])
-  if(any(!is.na(samples$id)&!grepl('^[567][0-9]$',samples$id)))stop(simpleError("Problem finding patient id"))
+  samples$id<-ifelse(is.na(samples$id),,samples$id)
+  #if(any(!is.na(samples$id)&!grepl('^[567][0-9]$',samples$id)))stop(simpleError("Problem finding patient id"))
+  samples$name<-sprintf('%s %s %s%s',sub(' .*$','',samples$ExtractionKit),samples$SampleType,ifelse(samples$id=='','','#'),samples$id)
+  rownames(samples)<-samples$SampleID
 
   if(any(!samples$SampleID %in% colnames(otus)))stop(simpleError('Missing sample'))
 }
@@ -54,6 +58,7 @@ inBothSaliva<-apply(mobioSalivaProp,1,function(x)sum(x>sampleReadCut))>ncol(mobi
 print(summary(inBothSaliva))
 
 otuMeanScale<-t(apply(otuProp,1,function(x)x/max(x)))
+colnames(otuMeanScale)<-samples[colnames(otuMeanScale),'name']
 samples$sample<-ifelse(samples$SampleType %in% c('Extraction Blank','OR Air Swab','Sterile Swab'),'Negative control',samples$SampleType)
 sampleCols<-rainbow.lab(length(unique(samples$sample)),lightScale=0,lightMultiple=.7)
 names(sampleCols)<-unique(samples$sample)
