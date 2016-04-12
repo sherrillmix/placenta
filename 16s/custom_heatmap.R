@@ -1,4 +1,5 @@
 
+#modify heatmap() function from R stats package
 custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
     distfun = dist, hclustfun = hclust, reorderfun = function(d,
         w) reorder(d, w), add.expr, symm = FALSE, revC = identical(Colv,
@@ -62,13 +63,11 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
     else colInd <- 1L:nc
     x <- x[rowInd, colInd]
     labRow <- if (is.null(labRow))
-        if (is.null(rownames(x)))
-            (1L:nr)[rowInd]
+        if (is.null(rownames(x))) (1L:nr)[rowInd]
         else rownames(x)
     else labRow[rowInd]
     labCol <- if (is.null(labCol))
-        if (is.null(colnames(x)))
-            (1L:nc)[colInd]
+        if (is.null(colnames(x))) (1L:nc)[colInd]
         else colnames(x)
     else labCol[colInd]
     if (scale == "row") {
@@ -93,12 +92,9 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
         lhei <- c(lhei[1L], 0.2, lhei[2L])
     }
     if (!missing(RowSideColors)) {
-        if (!is.character(RowSideColors) || length(RowSideColors) !=
-            nr)
-            stop("'RowSideColors' must be a character vector of length nrow(x)")
-        lmat <- cbind(lmat[, 1] + 1, c(rep(NA, nrow(lmat) - 1),
-            1), lmat[, 2] + 1)
-        lwid <- c(lwid[1L], 0.2, lwid[2L])
+        if (!is.character(RowSideColors) || length(RowSideColors) != nr) stop("'RowSideColors' must be a character vector of length nrow(x)")
+        #lmat <- cbind(lmat[, 1] + 1, c(rep(NA, nrow(lmat) - 1), 1), lmat[, 2] + 1)
+        #lwid <- c(lwid[1L], 0.2, lwid[2L])
     }
     lmat[is.na(lmat)] <- 0
     if (verbose) {
@@ -112,10 +108,8 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
     on.exit(par(op), add = TRUE)
     layout(lmat, widths = lwid, heights = lhei, respect = TRUE)
     if (!missing(RowSideColors)) {
-        par(mar = c(margins[1L], 0, 0, 0.5))
-        image(rbind(if (revC)
-            nr:1L
-        else 1L:nr), col = RowSideColors[rowInd], axes = FALSE)
+        #par(mar = c(margins[1L], 0, 0, 0.5))
+        #image(rbind(if (revC) nr:1L else 1L:nr), col = RowSideColors[rowInd], axes = FALSE)
     }
     if (!missing(ColSideColors)) {
         par(mar = c(0.5, 0, 0, margins[2L]))
@@ -137,8 +131,11 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
         cex.axis = cexCol)
     if (!is.null(xlab))
         mtext(xlab, side = 1, line = margins[1L] - 1.25)
-    axis(4, iy, labels = labRow, las = 2, line = -0.5, tick = 0,
-        cex.axis = cexRow)
+    maxWidth<-max(strwidth(labRow,cex=cexRow))
+    rect(convertLineToUser(.5,4),1:length(labRow)+.5,convertLineToUser(.5,4)+maxWidth,1:length(labRow)-.5,cex.axis=cexRow,xpd=NA,col=RowSideColors[rowInd],border=NA)
+    axis(4, iy-.01, labels = labRow, las = 2, line = -0.49, tick = 0, cex.axis = cexRow,col.axis='white')
+    axis(4, iy, labels = labRow, las = 2, line = -0.5, tick = 0, cex.axis = cexRow)
+
     if (!is.null(ylab))
         mtext(ylab, side = 4, line = margins[2L] - 1.25)
     if (!missing(add.expr))
