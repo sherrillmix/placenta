@@ -1,11 +1,16 @@
 ###
-pairedSampleTypes<-apply(table(samples$id,samples$SampleType)>1,2,any)
+pairedSampleTypes<-apply(table(ifelse(samples$id=='',NA,samples$id),samples$type)>1,2,any)
 pairedSampleTypes<-names(pairedSampleTypes)[pairedSampleTypes]
 
+#split air swab and other negatives
+#find minimum for each OTU in each sampleType and extract
+
+
+
 pairs<-lapply(pairedSampleTypes,function(type){
-  thisPsp<-samples[samples$SampleType==type&samples$ExtractionKit=='PSP Spin Stool DNA Plus Kit',]
+  thisPsp<-samples[samples$type==type&samples$ExtractionKit=='PSP Spin Stool DNA Plus Kit',]
   thisPsp<-thisPsp[order(thisPsp$id),]
-  thisMobio<-samples[samples$SampleType==type&samples$ExtractionKit=='Mobio Powersoil',]
+  thisMobio<-samples[samples$type==type&samples$ExtractionKit=='Mobio Powersoil',]
   thisMobio<-thisMobio[order(thisMobio$id),]
   if(any(thisPsp$id!=thisMobio$id))stop(simpleError('IDs do not match between PSP and Mobio'))
   paired<-mapply(function(pspId,mobioId)otus[,c(pspId,mobioId)],thisPsp$SampleID,thisMobio$SampleID,SIMPLIFY=FALSE)
@@ -29,8 +34,16 @@ propVsN<-do.call(rbind,dnar::cacheOperation('work/propVsN.Rdat',mclapply,propCut
   return(apply(noControl,2,sum))
 },mc.cores=4))
 
+totalN<-do.call(rbind,dnar::cacheOperation('work/totalN.Rdat',mclapply,propCuts,function(propCut){
+  cat('.')
+  pairMatch<-pairMinMax>propCut
+  return(apply(pairMatch,2,sum))
+},mc.cores=4))
+
+
 cols<-rev(rainbow(ncol(propVsN),alpha=.7))
-names(cols)<-colnames(propVsN)
+cols2<-rev(rainbow(ncol(propVsN),alpha=.3))
+names(cols)<-names(cols2)<-colnames(propVsN)
 pdf('out/propVsN.pdf',width=4,height=4)
   par(mar=c(2.6,4.2,.1,.2),las=1,lheight=.7,mgp=c(2.5,.8,0))
   plot(1,1,type='n',xlab='',ylab='Number of OTUs shared by both\nextractions but not control',ylim=range(propVsN+1),xlim=range(propCuts),log='xy',xaxt='n',yaxt='n')
@@ -42,6 +55,7 @@ pdf('out/propVsN.pdf',width=4,height=4)
   ticks<-c(1:10,seq(20,100,10),seq(200,1000,100),seq(2000,10000,1000))+1
   axis(2,ticks,rep('',length(ticks)),tcl=-.25)
   sapply(colnames(propVsN),function(x)lines(propCuts,propVsN[,x]+1,lwd=2,col=cols[x]))
+  sapply(colnames(propVsN),function(x)polygon(c(propCuts,rev(propCuts)),c(propVsN[,x],rev(totalN[,x]))+1,lwd=2,col=cols2[x],border=NA))#,border=cols[x]))
   legend('topright',names(cols),col=cols,bty='n',lty=1,lwd=2)
 dev.off()
 
