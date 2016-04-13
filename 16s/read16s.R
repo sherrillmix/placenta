@@ -4,6 +4,8 @@ if(!exists('otus')){
   raw<-readLines('data/classic_otu_table.txt')
   raw[2]<-sub('^#','',raw[2])
   otus<-read.table(textConnection(raw),comment='#',sep='\t',header=TRUE,stringsAsFactors=FALSE)
+  otus$taxa<-sapply(strsplit(otus$Consensus.Lineage,'; '),function(x){x<-x[!grepl('^[a-z]__$',x)];ifelse(grepl('^s__',tail(x,1)),paste(tail(x,2),collapse=' '),tail(x,1))})
+  rownames(otus)<-ave(otus$taxa,otus$taxa,FUN=function(x)sprintf('%s #%d',x,1:length(x)))
 
   raw<-readLines('data/combined_mapping_qiime_keepers.txt')
   raw[1]<-sub('^#','',raw[1])
@@ -22,8 +24,6 @@ if(!exists('otus')){
   if(any(!samples$SampleID %in% colnames(otus)))stop(simpleError('Missing sample'))
 }
 
-otus$taxa<-sapply(strsplit(otus$Consensus.Lineage,'; '),function(x){x<-x[!grepl('^[a-z]__$',x)];ifelse(grepl('^s__',tail(x,1)),paste(tail(x,2),collapse=' '),tail(x,1))})
-rownames(otus)<-ave(otus$taxa,otus$taxa,FUN=function(x)sprintf('%s #%d',x,1:length(x)))
 
 otuN<-apply(otus[,samples$SampleID],1,sum)
 mobioFs<-otus[,samples[samples$SampleType=='Placenta (FS)'&samples$ExtractionKit=='Mobio Powersoil','SampleID']]
