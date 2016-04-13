@@ -92,7 +92,7 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
         lhei <- c(lhei[1L], 0.2, lhei[2L])
     }
     if (!missing(RowSideColors)) {
-        if (!is.character(RowSideColors) || length(RowSideColors) != nr) stop("'RowSideColors' must be a character vector of length nrow(x)")
+        if (length(RowSideColors) != nr) stop("'RowSideColors' must be a character vector of length nrow(x)")
         #lmat <- cbind(lmat[, 1] + 1, c(rep(NA, nrow(lmat) - 1), 1), lmat[, 2] + 1)
         #lwid <- c(lwid[1L], 0.2, lwid[2L])
     }
@@ -107,10 +107,6 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
     op <- par(no.readonly = TRUE)
     on.exit(par(op), add = TRUE)
     layout(lmat, widths = lwid, heights = lhei, respect = TRUE)
-    if (!missing(RowSideColors)) {
-        #par(mar = c(margins[1L], 0, 0, 0.5))
-        #image(rbind(if (revC) nr:1L else 1L:nr), col = RowSideColors[rowInd], axes = FALSE)
-    }
     if (!missing(ColSideColors)) {
         par(mar = c(0.5, 0, 0, margins[2L]))
         image(cbind(1L:nc), col = ColSideColors[colInd], axes = FALSE)
@@ -131,10 +127,20 @@ custom_heatmap<-function (x, Rowv = NULL, Colv = if (symm) "Rowv" else NULL,
         cex.axis = cexCol)
     if (!is.null(xlab))
         mtext(xlab, side = 1, line = margins[1L] - 1.25)
-    maxWidth<-max(strwidth(labRow,cex=cexRow))
-    rect(convertLineToUser(.5,4),1:length(labRow)+.5,convertLineToUser(.5,4)+maxWidth,1:length(labRow)-.5,cex.axis=cexRow,xpd=NA,col=RowSideColors[rowInd],border=NA)
-    axis(4, iy-.01, labels = labRow, las = 2, line = -0.49, tick = 0, cex.axis = cexRow,col.axis='white')
-    axis(4, iy, labels = labRow, las = 2, line = -0.5, tick = 0, cex.axis = cexRow)
+    labMat<-do.call(rbind,labRow)
+    maxWidths<-apply(labMat,2,function(x)max(strwidth(x,cex=cexRow)))+strwidth('M',cex=cexRow)
+    labOffset<-convertUserToLine(cumsum(c(0,maxWidths[-ncol(labMat)])),4)-convertUserToLine(0,4)
+    if(!missing(RowSideColors)){
+      colMat<-do.call(rbind,RowSideColors[rowInd])
+      for(ii in 1:ncol(labMat)){
+        rect(convertLineToUser(.5+labOffset[ii],4),1:length(labRow)+.5,convertLineToUser(.5+labOffset[ii],4)+maxWidths[ii],1:length(labRow)-.5,cex.axis=cexRow,xpd=NA,col=colMat[,ii],border=NA)
+      }
+    }
+    mOffset<-convertUserToLine(strwidth('M')*.5,4)-convertUserToLine(0,4)
+    for(ii in 1:ncol(labMat)){
+      axis(4, iy-.02, labels = labMat[,ii], las = 2, line = -0.48+labOffset[ii]+mOffset, tick = 0, cex.axis = cexRow,col.axis='white')
+      axis(4, iy, labels = labMat[,ii], las = 2, line = -0.5+labOffset[ii]+mOffset, tick = 0, cex.axis = cexRow)
+    }
 
     if (!is.null(ylab))
         mtext(ylab, side = 4, line = margins[2L] - 1.25)
