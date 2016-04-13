@@ -10,10 +10,11 @@ if(!exists('otus')){
   samples<-read.table(textConnection(raw),sep='\t',header=TRUE,stringsAsFactors=FALSE)
   #samples$id<-ave(samples$SampleID,paste(samples$ExtractionKit,samples$SampleType),FUN=function(x)1:length(x))
   samples$id<-''
-  samples[grepl('[567][0-9]',samples$SampleID),'id']<-sub('.*([567][0-9]).*','\\1',samples[grepl('[567][0-9]',samples$SampleID),'SampleID'])
-  samples$id<-ifelse(is.na(samples$id),,samples$id)
-  #if(any(!is.na(samples$id)&!grepl('^[567][0-9]$',samples$id)))stop(simpleError("Problem finding patient id"))
-  samples$name<-sprintf('%s %s %s%s',sub(' .*$','',samples$ExtractionKit),samples$SampleType,ifelse(samples$id=='','','#'),samples$id)
+  samples[!grepl('OR Air Swab',samples$SampleID)&grepl('[567][0-9]',samples$SampleID),'id']<-sub('.*([567][0-9]).*','\\1',samples[!grepl('OR Air Swab',samples$SampleID)&grepl('[567][0-9]',samples$SampleID),'SampleID'])
+  if(any(samples$id!=''&!grepl('^[567][0-9]$',samples$id)))stop(simpleError("Problem finding patient id"))
+  samples$extract<-sub(' .*$','',samples$ExtractionKit)
+  samples$type<-sub('OR ','',samples$SampleType)
+  samples$name<-sprintf('%s %s %s%s',samples$extract,samples$type,ifelse(samples$id=='','','#'),samples$id)
   rownames(samples)<-samples$SampleID
 
   if(any(!samples$SampleID %in% colnames(otus)))stop(simpleError('Missing sample'))
