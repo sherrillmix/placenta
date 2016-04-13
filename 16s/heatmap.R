@@ -1,13 +1,13 @@
 if(!exists('otuProp'))source('read16s.R')
+source("custom_heatmap.R")
 
 otuMeanScale<-t(apply(otuProp,1,function(x)x/max(x)))
 #colnames(otuMeanScale)<-samples[colnames(otuMeanScale),'name']
-samples$sample<-ifelse(samples$SampleType %in% c('Extraction Blank','OR Air Swab','Sterile Swab'),'Negative control',samples$SampleType)
 sampleCols<-rainbow.lab(length(unique(samples$sample)),lightScale=0,lightMultiple=.8)
 names(sampleCols)<-unique(samples$sample)
-idCols<-rainbow.lab(length(unique(samples$id[samples$id!=''])),lightScale=0,lightMultiple=.6,start=0,end=3)
+idCols<-rainbow.lab(length(unique(samples$id[samples$id!=''])),lightScale=0,lightMultiple=.7,start=2,end=6,alpha=.7)
 names(idCols)<-unique(samples$id[samples$id!=''])
-extractCols<-rainbow.lab(length(unique(samples$extract)),lightScale=0,lightMultiple=.75,start=0,end=-.75)
+extractCols<-rainbow.lab(length(unique(samples$extract)),lightScale=0,lightMultiple=1,start=0.05,end=-.8)
 names(extractCols)<-unique(samples$extract)
 cols<-c('white',tail(rev(heat.colors(130)),99))
 breaks<-c(-1e-9,seq(1e-9,1+1e-9,length.out=100))
@@ -23,8 +23,8 @@ pdf('out/heatmap.pdf',height=8,width=8)
   rect(insetPos[1],insetPos[2],insetPos[3],insetPos[4],xpd=NA)
   prettyLabs<-pretty(0:1)
   prettyPos<-prettyLabs*(insetPos[3]-insetPos[1])+insetPos[1]
-  segments(prettyPos,insetPos[2],prettyPos,insetPos[2]-diff(insetPos[c(2,4)])*.1,xpd=NA)
-  text(prettyPos,insetPos[2]-diff(insetPos[c(2,4)])*.22,prettyLabs,xpd=NA,adj=c(.5,1),cex=.85)
+  segments(prettyPos,insetPos[2],prettyPos,insetPos[2]-diff(insetPos[c(2,4)])*.2,xpd=NA)
+  text(prettyPos,insetPos[2]-diff(insetPos[c(2,4)])*.32,prettyLabs,xpd=NA,adj=c(.5,1),cex=.85)
   text(mean(insetPos[c(1,3)]),insetPos[4]+diff(insetPos[c(2,4)])*.45,"Proportion of max",xpd=NA,adj=c(.5,0))
 dev.off()
 
