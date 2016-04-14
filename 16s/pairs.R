@@ -36,9 +36,15 @@ pairMin<-lapply(pairs,function(x)do.call(cbind,lapply(x,function(y)apply(y,1,min
 pairMinMax<-do.call(cbind,lapply(pairMin,apply,1,max))
 pairMax<-lapply(pairs,function(x)do.call(cbind,lapply(x,function(y)apply(y,1,max))))
 pairMaxMax<-do.call(cbind,lapply(pairMax,apply,1,max))
+pairGreaterThanZero<-do.call(cbind,lapply(pairMin,function(x)apply(x>0,1,sum)))
+colnames(pairGreaterThanZero)<-sprintf('%s >0',colnames(pairGreaterThanZero))
+pspGreaterThanZero<-apply(pspProp>0,1,sum)
+mobioGreaterThanZero<-apply(mobioProp>0,1,sum)
 
 anyPlacenta<-apply(pairMinMax[,c('Placenta (FS)','Placenta (MS)')],1,max)>0
-out<-data.frame('ID'=otus[anyPlacenta,'OTU.ID'],'Taxa'=otus[anyPlacenta,'Consensus.Lineage'],pairMinMax[anyPlacenta,],'PSP controls'=apply(pspProp[anyPlacenta,],1,max),'MoBio controls'=apply(mobioProp[anyPlacenta,],1,max),check.names=FALSE)
+out<-data.frame('ID'=otus[,'OTU.ID'],'Taxa'=otus[,'Consensus.Lineage'],pairMinMax[,],'PSP controls'=apply(pspProp[,],1,max),'MoBio controls'=apply(mobioProp[,],1,max),pairGreaterThanZero,'PSP control >0'=pspGreaterThanZero,'MoBio control >0'=mobioGreaterThanZero,check.names=FALSE)
+out<-out[anyPlacenta,]
+out<-out[order(out[,'PSP controls'],out[,'MoBio controls']),]
 write.csv(out,'out/otusInPlacenta.csv',row.names=FALSE)
 
 message('Testing csv')
@@ -153,3 +159,20 @@ pdf('out/portion_single.pdf',width=8,height=4)
 dev.off()
 
 
+#test a few levels
+propCut<-1/100
+print(apply(pairMinMax>propCut,2,function(x){
+  anyPsp<-apply(pspProp>propCut,1,sum)>0
+  anyMobio<-apply(mobioProp>propCut,1,sum)>0
+  sum(x>propCut&!anyPsp&!anyMobio)
+}))
+
+propCut<-.001/100
+print(apply(pairMinMax>propCut,2,function(x){
+  anyPsp<-apply(pspProp>propCut,1,sum)>0
+  anyMobio<-apply(mobioProp>propCut,1,sum)>0
+  sum(x>propCut&!anyPsp&!anyMobio)
+}))
+
+selector<-(out[,'Placenta (FS)']>propCut|out[,'Placenta (MS)']>propCut)&out[,'PSP controls']<propCut&out[,'MoBio controls']<propCut
+table(apply(out[selector,c('Placenta (FS) >0','Placenta (MS) >0')],1,sum))
