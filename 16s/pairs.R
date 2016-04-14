@@ -1,3 +1,4 @@
+if(!exists('otus'))source("read16s.R")
 ###
 pairedSampleTypes<-apply(table(ifelse(samples$id=='',NA,samples$id),samples$type)>1,2,any)
 pairedSampleTypes<-names(pairedSampleTypes)[pairedSampleTypes]
@@ -39,6 +40,11 @@ pairMaxMax<-do.call(cbind,lapply(pairMax,apply,1,max))
 anyPlacenta<-apply(pairMinMax[,c('Placenta (FS)','Placenta (MS)')],1,max)>0
 out<-data.frame('ID'=otus[anyPlacenta,'OTU.ID'],'Taxa'=otus[anyPlacenta,'Consensus.Lineage'],pairMinMax[anyPlacenta,],'PSP controls'=apply(pspProp[anyPlacenta,],1,max),'MoBio controls'=apply(mobioProp[anyPlacenta,],1,max),check.names=FALSE)
 write.csv(out,'out/otusInPlacenta.csv',row.names=FALSE)
+
+message('Testing csv')
+x<-read.csv('out/otusInPlacenta.csv',check.names=FALSE)
+message('FS: ',nrow(x[x[,'Placenta (FS)']>0&x[,'MoBio controls']==0&x[,'PSP controls']==0,]),' otus')
+message('MS: ',nrow(x[x[,'Placenta (MS)']>0&x[,'MoBio controls']==0&x[,'PSP controls']==0,]),' otus')
 
 
 propCuts<-10^seq(log10(min(pairMinMax[pairMinMax>0])),0,.005)
