@@ -2,6 +2,7 @@ if(!exists('otus'))source("read16s.R")
 ###
 pairedSampleTypes<-apply(table(ifelse(samples$id=='',NA,samples$id),samples$type)>1,2,any)
 pairedSampleTypes<-names(pairedSampleTypes)[pairedSampleTypes]
+isUnassigned<-grepl('Unassigned',rownames(otus))
 
 secondMax<-function(x)tail(sort(x),2)[1]
 singles<-lapply(unique(samples$airSplit),function(type){
@@ -65,7 +66,7 @@ propVsN<-do.call(rbind,dnar::cacheOperation('work/propVsN.Rdat',mclapply,propCut
   pairMatch<-pairMinMax>propCut
   anyPsp<-apply(pspProp>propCut,1,sum)>0
   anyMobio<-apply(mobioProp>propCut,1,sum)>0
-  noControl<-apply(pairMatch,2,function(x)x&!anyPsp&!anyMobio)
+  noControl<-apply(pairMatch,2,function(x)x&!anyPsp&!anyMobio) #&!isUnassigned
   return(apply(noControl,2,sum))
 },mc.cores=4))
 
