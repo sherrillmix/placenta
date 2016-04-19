@@ -32,6 +32,12 @@ names(pairs)<-pairedSampleTypes
 
 pspProp<-apply(pspControl,2,function(x)x/sum(x))
 mobioProp<-apply(mobioControl,2,function(x)x/sum(x))
+
+#look at random pairing of air swabs between mobio and psp
+#at best this would provide a lower bound for random lab/reagent contamination since the real samples have paired input
+negPairs<-ifelse(pspProp[,1:5]<mobioProp[,1:5],pspProp[,1:5],mobioProp[,1:5]) #find min
+negNotPair<-do.call(cbind,lapply(1:5,function(x)apply(cbind(pspProp[,-x],mobioProp[,-x]),1,max))) #find max outside pair
+
 pairMin<-lapply(pairs,function(x)do.call(cbind,lapply(x,function(y)apply(y,1,min))))
 pairMinMax<-do.call(cbind,lapply(pairMin,apply,1,max))
 pairMax<-lapply(pairs,function(x)do.call(cbind,lapply(x,function(y)apply(y,1,max))))
@@ -61,6 +67,11 @@ propVsN<-do.call(rbind,dnar::cacheOperation('work/propVsN.Rdat',mclapply,propCut
   anyMobio<-apply(mobioProp>propCut,1,sum)>0
   noControl<-apply(pairMatch,2,function(x)x&!anyPsp&!anyMobio)
   return(apply(noControl,2,sum))
+},mc.cores=4))
+
+negPropVsN<-unlist(mclapply(propCuts,function(propCut){
+  cat('.')
+  sum(apply(negPairs>=propCut&negNotPair<propCut,1,any))
 },mc.cores=4))
 
 totalN<-do.call(rbind,dnar::cacheOperation('work/totalN.Rdat',mclapply,propCuts,function(propCut){
@@ -111,6 +122,7 @@ pdf(sprintf('out/propVsN_%s.pdf',showTotal),width=4,height=4)
   if(showTotal=='total')sapply(colnames(propVsN),function(x)polygon(c(propCuts,rev(propCuts)),c(propVsN[,x],rev(totalN[,x]))+1,col=cols2[x],border=NA))#,border=cols[x]))
   if(showTotal=='totalUnpaired')sapply(colnames(propVsN),function(x)polygon(c(propCuts,rev(propCuts)),c(propVsN[,x],rev(totalUnpairedN[,x]))+1,col=cols2[x],border=NA))#,border=cols[x]))
   sapply(colnames(propVsN),function(x)lines(propCuts,propVsN[,x]+1,lwd=2,col=cols[x]))
+  lines(propCuts,negPropVsN+1,lwd=2,col='black')
   legend('topright',names(cols),col=cols,bty='n',lty=1,lwd=2)
   #legend('topright',names(cols),col=cols,bty='n',lty=1,lwd=2)
 dev.off()
